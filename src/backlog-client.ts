@@ -2,7 +2,7 @@
  * Backlog API client for the MCP server
  */
 
-import { AuthConfig, RecentlyViewedProject, BacklogError } from './types.js';
+import { AuthConfig, RecentlyViewedProject, BacklogProject, BacklogError } from './types.js';
 
 /**
  * Backlog API client for making API calls
@@ -37,22 +37,27 @@ export class BacklogClient {
   private async request<T>(path: string, options: RequestInit = {}, queryParams: Record<string, string> = {}): Promise<T> {
     const url = this.getUrl(path, queryParams);
     
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    });
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+      });
 
-    const data = await response.json();
-    
-    if (!response.ok) {
-      const error = data as BacklogError;
-      throw new Error(`Backlog API Error: ${error.errors?.[0]?.message || 'Unknown error'} (Code: ${error.errors?.[0]?.code})`);
+      const data = await response.json();
+      
+      if (!response.ok) {
+        const error = data as BacklogError;
+        throw new Error(`Backlog API Error: ${error.errors?.[0]?.message || 'Unknown error'} (Code: ${error.errors?.[0]?.code})`);
+      }
+      
+      return data as T;
+    } catch (error) {
+      console.error(`Error in Backlog API request to ${path}:`, error);
+      throw error;
     }
-    
-    return data as T;
   }
 
   /**
@@ -66,5 +71,26 @@ export class BacklogClient {
     if (params.count !== undefined) queryParams.count = params.count.toString();
     
     return this.request<RecentlyViewedProject[]>('/users/myself/recentlyViewedProjects', {}, queryParams);
+  }
+
+  /**
+   * Get information about a specific project
+   */
+  async getProject(projectId: string): Promise<BacklogProject> {
+    return this.request<BacklogProject>(`/projects/${projectId}`);
+  }
+
+  /**
+   * Get information about the current user
+   */
+  async getMyself() {
+    return this.request('/users/myself');
+  }
+
+  /**
+   * Get space information
+   */
+  async getSpace() {
+    return this.request('/space');
   }
 }

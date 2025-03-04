@@ -43,3 +43,31 @@ export interface BacklogError {
     moreInfo: string;
   }>;
 }
+
+// Backlog user information
+export interface BacklogUser {
+  id: number;
+  userId: string;
+  name: string;
+  roleType: number;
+  lang: string;
+  mailAddress: string;
+  nulabAccount: {
+    nulabId: string;
+    name: string;
+    uniqueId: string;
+  };
+}
+
+// Backlog space information
+export interface BacklogSpace {
+  spaceKey: string;
+  name: string;
+  ownerId: number;
+  lang: string;
+  timezone: string;
+  reportSendTime: string;
+  textFormattingRule: string;
+  created: string;
+  updated: string;
+}

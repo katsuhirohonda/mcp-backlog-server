@@ -11,22 +11,55 @@ export function listTools() {
   return {
     tools: [
       {
-        name: "create_note",
-        description: "Create a new note",
+        name: "get_backlog_user",
+        description: "Get current Backlog user information",
+        inputSchema: {
+          type: "object",
+          properties: {},
+          required: []
+        }
+      },
+      {
+        name: "get_backlog_space",
+        description: "Get Backlog space information",
+        inputSchema: {
+          type: "object",
+          properties: {},
+          required: []
+        }
+      },
+      {
+        name: "list_recent_projects",
+        description: "List recently viewed Backlog projects",
         inputSchema: {
           type: "object",
           properties: {
-            title: {
-              type: "string",
-              description: "Title of the note"
+            count: {
+              type: "number",
+              description: "Number of projects to retrieve (1-100, default 20)"
             },
-            content: {
+            order: {
               type: "string",
-              description: "Text content of the note"
+              description: "Sorting order (asc or desc, default desc)",
+              enum: ["asc", "desc"]
             }
           },
-          required: ["title", "content"]
+          required: []
         }
+      }
+    ]
+  };
+}
+
+/**
+ * Format data for display in tool response
+ */
+function formatToolResponse(title: string, data: any): any {
+  return {
+    content: [
+      {
+        type: "text",
+        text: `# ${title}\n\n${JSON.stringify(data, null, 2)}`
       }
     ]
   };
@@ -36,27 +69,38 @@ export function listTools() {
  * Handle tool execution
  */
 export async function executeTools(client: BacklogClient, toolName: string, args: any) {
-  switch (toolName) {
-    case "create_note": {
-      const title = String(args?.title);
-      const content = String(args?.content);
-      
-      if (!title || !content) {
-        throw new Error("Title and content are required");
+  try {
+    switch (toolName) {
+      case "get_backlog_user": {
+        const userData = await client.getMyself();
+        return formatToolResponse("Backlog User Information", userData);
       }
       
-      // Here we would actually interact with the Backlog API
-      // For now, we're just mocking the behavior
+      case "get_backlog_space": {
+        const spaceData = await client.getSpace();
+        return formatToolResponse("Backlog Space Information", spaceData);
+      }
       
-      return {
-        content: [{
-          type: "text",
-          text: `Created note: ${title}`
-        }]
-      };
+      case "list_recent_projects": {
+        const count = args?.count && Number(args.count) > 0 && Number(args.count) <= 100 
+          ? Number(args.count) 
+          : 20;
+          
+        const order = args?.order === 'asc' ? 'asc' : 'desc';
+        
+        const projects = await client.getRecentlyViewedProjects({ 
+          count, 
+          order 
+        });
+        
+        return formatToolResponse("Recently Viewed Projects", projects);
+      }
+      
+      default:
+        throw new Error("Unknown tool");
     }
-    
-    default:
-      throw new Error("Unknown tool");
+  } catch (error) {
+    console.error(`Error executing tool ${toolName}:`, error);
+    throw error;
   }
 }

@@ -6,6 +6,14 @@ import { BacklogClient } from '../backlog-client.js';
 import { RecentlyViewedProject } from '../types.js';
 
 /**
+ * Extract the project ID from a backlog URI
+ */
+function extractProjectId(uri: string): string {
+  const url = new URL(uri);
+  return url.pathname.replace(/^\/project\//, '');
+}
+
+/**
  * Handler for listing recent projects
  */
 export async function listRecentProjects(client: BacklogClient) {
@@ -32,26 +40,37 @@ export async function listRecentProjects(client: BacklogClient) {
 export async function readProject(client: BacklogClient, uri: string) {
   try {
     // Parse the URI to get the project ID
-    const url = new URL(uri);
-    const projectId = url.pathname.replace(/^\/project\//, '');
+    const projectId = extractProjectId(uri);
     
-    // Get the project details - in a real implementation, this would call
-    // a specific Backlog API endpoint to get project details by ID
-    const recentProjects = await client.getRecentlyViewedProjects({ count: 100 });
-    const projectData = recentProjects.find(item => item.project.id.toString() === projectId);
-    
-    if (!projectData) {
-      throw new Error(`Project ${projectId} not found`);
+    // Try to get the project details directly
+    try {
+      const project = await client.getProject(projectId);
+      
+      // Return the project data as a JSON resource
+      return {
+        contents: [{
+          uri,
+          mimeType: "application/json",
+          text: JSON.stringify(project, null, 2)
+        }]
+      };
+    } catch (e) {
+      // Fallback: if direct project fetch fails, try to find it in recent projects
+      const recentProjects = await client.getRecentlyViewedProjects({ count: 100 });
+      const projectData = recentProjects.find(item => item.project.id.toString() === projectId);
+      
+      if (!projectData) {
+        throw new Error(`Project ${projectId} not found`);
+      }
+      
+      return {
+        contents: [{
+          uri,
+          mimeType: "application/json",
+          text: JSON.stringify(projectData.project, null, 2)
+        }]
+      };
     }
-    
-    // Return the project data as a JSON resource
-    return {
-      contents: [{
-        uri,
-        mimeType: "application/json",
-        text: JSON.stringify(projectData.project, null, 2)
-      }]
-    };
   } catch (error) {
     console.error('Error reading project:', error);
     throw error;
