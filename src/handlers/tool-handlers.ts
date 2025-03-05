@@ -186,6 +186,64 @@ export function listTools() {
           },
           required: ["issueIdOrKey", "commentId"]
         }
+      },
+      {
+        name: "get_wiki_page_list",
+        description: "Get a list of Wiki pages from Backlog",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectIdOrKey: {
+              type: "string",
+              description: "Project ID or project key (optional)"
+            },
+            keyword: {
+              type: "string",
+              description: "Keyword to search for in Wiki pages (optional)"
+            }
+          },
+          required: []
+        }
+      },
+      {
+        name: "get_wiki_page",
+        description: "Get detailed information about a specific Wiki page",
+        inputSchema: {
+          type: "object",
+          properties: {
+            wikiId: {
+              type: "string",
+              description: "Wiki page ID"
+            }
+          },
+          required: ["wikiId"]
+        }
+      },
+      {
+        name: "update_wiki_page",
+        description: "Update a Wiki page in Backlog",
+        inputSchema: {
+          type: "object",
+          properties: {
+            wikiId: {
+              type: "string",
+              description: "Wiki page ID"
+            },
+            name: {
+              type: "string",
+              description: "New name for the Wiki page (optional)"
+            },
+            content: {
+              type: "string",
+              description: "New content for the Wiki page (optional)"
+            },
+            mailNotify: {
+              type: "boolean",
+              description: "Whether to send notification emails (optional)"
+            }
+          },
+          required: ["wikiId"]
+        }
       }
     ]
   };
@@ -344,6 +402,34 @@ export async function executeTools(client: BacklogClient, toolName: string, args
         const comment = await client.getComment(issueIdOrKey, commentId);
         
         return formatToolResponse("Issue Comment", comment);
+      }
+      
+      case "get_wiki_page_list": {
+        const { projectIdOrKey, keyword } = args;
+        const wikiPages = await client.getWikiPageList(projectIdOrKey, keyword);
+        return formatToolResponse("Wiki Pages", wikiPages);
+      }
+      
+      case "get_wiki_page": {
+        const { wikiId } = args;
+        if (!wikiId) {
+          throw new Error("Wiki ID is required");
+        }
+        const wikiPage = await client.getWikiPage(wikiId);
+        return formatToolResponse("Wiki Page", wikiPage);
+      }
+      
+      case "update_wiki_page": {
+        const { wikiId, name, content, mailNotify } = args;
+        if (!wikiId) {
+          throw new Error("Wiki ID is required");
+        }
+        const updatedWikiPage = await client.updateWikiPage(wikiId, { 
+          name, 
+          content, 
+          mailNotify 
+        });
+        return formatToolResponse("Updated Wiki Page", updatedWikiPage);
       }
       
       default:

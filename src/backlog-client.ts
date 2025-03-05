@@ -2,7 +2,7 @@
  * Backlog API client for the MCP server
  */
 
-import { AuthConfig, RecentlyViewedProject, BacklogProject, BacklogError, BacklogIssue, BacklogIssueDetail, BacklogComment, BacklogCommentDetail, BacklogCommentCount } from './types.js';
+import { AuthConfig, RecentlyViewedProject, BacklogProject, BacklogError, BacklogIssue, BacklogIssueDetail, BacklogComment, BacklogCommentDetail, BacklogCommentCount, BacklogWikiPage } from './types.js';
 
 /**
  * Backlog API client for making API calls
@@ -215,5 +215,57 @@ export class BacklogClient {
    */
   async getComment(issueIdOrKey: string, commentId: number): Promise<BacklogCommentDetail> {
     return this.request<BacklogCommentDetail>(`/issues/${issueIdOrKey}/comments/${commentId}`);
+  }
+
+  /**
+   * Get Wiki page list
+   */
+  async getWikiPageList(projectIdOrKey?: string, keyword?: string): Promise<BacklogWikiPage[]> {
+    const queryParams: Record<string, string> = {};
+    
+    if (projectIdOrKey) {
+      queryParams.projectIdOrKey = projectIdOrKey;
+    }
+    
+    if (keyword) {
+      queryParams.keyword = keyword;
+    }
+    
+    return this.request<BacklogWikiPage[]>('/wikis', {}, queryParams);
+  }
+
+  /**
+   * Get Wiki page detail
+   */
+  async getWikiPage(wikiId: string): Promise<BacklogWikiPage> {
+    return this.request<BacklogWikiPage>(`/wikis/${wikiId}`);
+  }
+
+  /**
+   * Update Wiki page
+   */
+  async updateWikiPage(
+    wikiId: string, 
+    params: { 
+      name?: string; 
+      content?: string; 
+      mailNotify?: boolean;
+    }
+  ): Promise<BacklogWikiPage> {
+    const formData: Record<string, string | number | boolean> = {};
+    
+    if (params.name !== undefined) {
+      formData.name = params.name;
+    }
+    
+    if (params.content !== undefined) {
+      formData.content = params.content;
+    }
+    
+    if (params.mailNotify !== undefined) {
+      formData.mailNotify = params.mailNotify;
+    }
+    
+    return this.postFormData<BacklogWikiPage>(`/wikis/${wikiId}`, formData);
   }
 }

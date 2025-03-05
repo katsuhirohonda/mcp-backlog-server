@@ -17,6 +17,10 @@ export function listPrompts() {
       {
         name: "analyze_backlog_usage",
         description: "Analyze your Backlog usage patterns",
+      },
+      {
+        name: "summarize_wiki_pages",
+        description: "Summarize Wiki pages from a Backlog project",
       }
     ]
   };
@@ -140,11 +144,70 @@ export async function getPrompt(client: BacklogClient, promptName: string) {
         };
       }
       
+      case "summarize_wiki_pages": {
+        // Get recent projects to select one
+        const recentProjects = await client.getRecentlyViewedProjects({ count: 5 });
+        
+        if (recentProjects.length === 0) {
+          throw new Error("No recent projects found");
+        }
+        
+        // Use the first project
+        const firstProject = recentProjects[0].project;
+        
+        // Get wiki pages for the project
+        const wikiPages = await client.getWikiPageList(firstProject.projectKey);
+        
+        // Limit to 10 wiki pages
+        const limitedWikiPages = wikiPages.slice(0, 10);
+        
+        // Create embedded resources for each wiki page
+        const embeddedWikiPages = await Promise.all(
+          limitedWikiPages.map(async (wiki) => {
+            // Get full wiki content
+            const fullWiki = await client.getWikiPage(wiki.id.toString());
+            
+            return {
+              type: "resource" as const,
+              resource: {
+                uri: `backlog://wiki/${wiki.id}`,
+                mimeType: "application/json",
+                text: JSON.stringify(fullWiki, null, 2)
+              }
+            };
+          })
+        );
+        
+        // Construct the prompt
+        return {
+          messages: [
+            {
+              role: "user",
+              content: {
+                type: "text",
+                text: `Please review the following Wiki pages from the "${firstProject.name}" project:`
+              }
+            },
+            ...embeddedWikiPages.map(wiki => ({
+              role: "user" as const,
+              content: wiki
+            })),
+            {
+              role: "user",
+              content: {
+                type: "text",
+                text: "Provide a concise summary of these Wiki pages, highlighting the key information and how they relate to each other."
+              }
+            }
+          ]
+        };
+      }
+      
       default:
-        throw new Error("Unknown prompt");
+        throw new Error(`Unknown prompt: ${promptName}`);
     }
   } catch (error) {
-    console.error('Error generating prompt:', error);
+    console.error(`Error generating prompt ${promptName}:`, error);
     throw error;
   }
 }

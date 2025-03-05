@@ -177,3 +177,51 @@ export interface BacklogCommentCount {
 export interface BacklogIssueDetail extends BacklogIssue {
   comments: BacklogComment[];
 }
+
+// Backlog Wiki page
+export interface BacklogWikiPage {
+  id: number;
+  projectId: number;
+  name: string;
+  content?: string;
+  tags: BacklogWikiTag[];
+  attachments?: any[];
+  sharedFiles?: any[];
+  stars?: any[];
+  createdUser: {
+    id: number;
+    userId: string;
+    name: string;
+    roleType: number;
+    lang: string;
+    nulabAccount: {
+      nulabId: string;
+      name: string;
+      uniqueId: string;
+    };
+    mailAddress: string;
+    lastLoginTime: string;
+  };
+  created: string;
+  updatedUser: {
+    id: number;
+    userId: string;
+    name: string;
+    roleType: number;
+    lang: string;
+    nulabAccount: {
+      nulabId: string;
+      name: string;
+      uniqueId: string;
+    };
+    mailAddress: string;
+    lastLoginTime: string;
+  };
+  updated: string;
+}
+
+// Backlog Wiki tag
+export interface BacklogWikiTag {
+  id: number;
+  name: string;
+}
