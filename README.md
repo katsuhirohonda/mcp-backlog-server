@@ -2,59 +2,67 @@
 
 Backlog MCP Server
 
-This is a TypeScript-based MCP server that implements a Backlog integration. It demonstrates core MCP concepts by providing:
+これはBacklogとModel Context Protocol (MCP)を統合するTypeScriptベースのサーバーです。以下のMCPの主要概念を実装しています：
 
-- Resources representing Backlog projects with URIs and metadata
-- Tools for interacting with Backlog API
-- Prompts for generating summaries and analyses of Backlog data
+- Backlogプロジェクトを表すリソース（URIとメタデータを含む）
+- Backlog APIと対話するためのツール
+- Backlogデータの要約と分析を生成するためのプロンプト
 
-## Features
+## 機能
 
-### Resources
-- List and access Backlog projects via `backlog://project/[id]` URIs
-- Each project resource includes project metadata and details
-- JSON formatted resources for structured data access
+### リソース
+- `backlog://project/[id]` URIを通じてBacklogプロジェクトにアクセス
+- 各プロジェクトリソースにはプロジェクトのメタデータと詳細情報が含まれる
+- 構造化データアクセスのためのJSON形式リソース
+- プロジェクト内の課題（イシュー）へのアクセス
 
-### Tools
-- `get_backlog_user` - Get current Backlog user information
-- `get_backlog_space` - Get Backlog space information
-- `list_recent_projects` - List recently viewed Backlog projects
-  - Configure count and sort order
+### ツール
+- `get_backlog_user` - 現在のBacklogユーザー情報を取得
+- `get_backlog_space` - Backlogスペース情報を取得
+- `list_recent_projects` - 最近閲覧したBacklogプロジェクトを一覧表示
+  - 件数と並び順を設定可能
+- `get_project_issues` - プロジェクトの課題を取得
+  - ステータス、担当者、ページネーションなどでフィルタリング可能
+- `get_issue_detail` - 特定の課題の詳細情報を取得
+- `get_issue_comments` - 課題のコメントを取得
+- `add_issue_comment` - 課題にコメントを追加
+- `get_issue_comment_count` - 課題のコメント数を取得
+- `get_issue_comment` - 特定のコメントの詳細情報を取得
 
-### Prompts
-- `summarize_projects` - Generate a summary of recently viewed Backlog projects
-- `analyze_backlog_usage` - Analyze Backlog usage patterns based on user, space, and project data
+### プロンプト
+- `summarize_projects` - 最近閲覧したBacklogプロジェクトの要約を生成
+- `analyze_backlog_usage` - ユーザー、スペース、プロジェクトデータに基づくBacklog使用パターンの分析
 
-## Requirements
+## 必要条件
 
-- Backlog account with API access
-- Environment variables:
-  - `BACKLOG_API_KEY`: Your Backlog API key
-  - `BACKLOG_SPACE_URL`: Your Backlog space URL (e.g., `https://your-space.backlog.com`)
+- API アクセス権を持つ Backlog アカウント
+- 環境変数:
+  - `BACKLOG_API_KEY`: Backlog API キー
+  - `BACKLOG_SPACE_URL`: Backlog スペース URL (例: `https://your-space.backlog.com`)
 
-## Development
+## 開発
 
-Install dependencies:
+依存関係のインストール:
 ```bash
 npm install
 ```
 
-Build the server:
+サーバーのビルド:
 ```bash
 npm run build
 ```
 
-For development with auto-rebuild:
+自動再ビルドによる開発:
 ```bash
 npm run watch
 ```
 
-## Installation
+## インストール
 
-To use with Claude Desktop, add the server config:
+Claude Desktopで使用するには、サーバー設定を追加します:
 
-On MacOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
+MacOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+Windows: `%APPDATA%/Claude/claude_desktop_config.json`
 
 ```json
 {
@@ -70,12 +78,25 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
 }
 ```
 
-### Debugging
+### デバッグ
 
-Since MCP servers communicate over stdio, debugging can be challenging. We recommend using the [MCP Inspector](https://github.com/modelcontextprotocol/inspector), which is available as a package script:
+MCPサーバーは標準入出力を介して通信するため、デバッグが難しい場合があります。[MCP Inspector](https://github.com/modelcontextprotocol/inspector)の使用をお勧めします。これはパッケージスクリプトとして利用可能です:
 
 ```bash
 npm run inspector
 ```
 
-The Inspector will provide a URL to access debugging tools in your browser.
+InspectorはブラウザでデバッグツールにアクセスするためのURLを提供します。
+
+## 技術詳細
+
+このサーバーは以下の主要コンポーネントで構成されています:
+
+- `index.ts` - メインエントリーポイント、MCPサーバーの初期化と設定
+- `backlog-client.ts` - Backlog APIとの通信を処理するクライアント
+- `handlers/` - リソース、ツール、プロンプトのハンドラー
+  - `resource-handlers.ts` - プロジェクトと課題のリソース処理
+  - `tool-handlers.ts` - Backlog APIとのインタラクションツール
+  - `prompt-handlers.ts` - プロンプト生成機能
+- `types.ts` - Backlog APIレスポンスの型定義
+- `config.ts` - 環境変数からの設定読み込み
