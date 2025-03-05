@@ -2,7 +2,7 @@
  * Backlog API client for the MCP server
  */
 
-import { AuthConfig, RecentlyViewedProject, BacklogProject, BacklogError, BacklogIssue, BacklogIssueDetail } from './types.js';
+import { AuthConfig, RecentlyViewedProject, BacklogProject, BacklogError, BacklogIssue, BacklogIssueDetail, BacklogComment, BacklogCommentDetail, BacklogCommentCount } from './types.js';
 
 /**
  * Backlog API client for making API calls
@@ -56,6 +56,41 @@ export class BacklogClient {
       return data as T;
     } catch (error) {
       console.error(`Error in Backlog API request to ${path}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Make a POST request with form data to Backlog
+   */
+  private async postFormData<T>(path: string, formData: Record<string, string | number | boolean>): Promise<T> {
+    const url = this.getUrl(path);
+    const formBody = new URLSearchParams();
+    
+    // Add form parameters
+    Object.entries(formData).forEach(([key, value]) => {
+      formBody.append(key, value.toString());
+    });
+    
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formBody,
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        const error = data as BacklogError;
+        throw new Error(`Backlog API Error: ${error.errors?.[0]?.message || 'Unknown error'} (Code: ${error.errors?.[0]?.code})`);
+      }
+      
+      return data as T;
+    } catch (error) {
+      console.error(`Error in Backlog API POST request to ${path}:`, error);
       throw error;
     }
   }
@@ -131,5 +166,54 @@ export class BacklogClient {
    */
   async getIssue(issueIdOrKey: string): Promise<BacklogIssueDetail> {
     return this.request<BacklogIssueDetail>(`/issues/${issueIdOrKey}`);
+  }
+
+  /**
+   * Get comments from an issue
+   * @param issueIdOrKey Issue ID or issue key
+   * @param params Query parameters for filtering comments
+   */
+  async getComments(issueIdOrKey: string, params: {
+    minId?: number;
+    maxId?: number;
+    count?: number;
+    order?: 'asc' | 'desc';
+  } = {}): Promise<BacklogComment[]> {
+    const queryParams: Record<string, string> = {};
+    
+    if (params.minId !== undefined) queryParams.minId = params.minId.toString();
+    if (params.maxId !== undefined) queryParams.maxId = params.maxId.toString();
+    if (params.count !== undefined) queryParams.count = params.count.toString();
+    if (params.order) queryParams.order = params.order;
+    
+    return this.request<BacklogComment[]>(`/issues/${issueIdOrKey}/comments`, {}, queryParams);
+  }
+
+  /**
+   * Add a comment to an issue
+   * @param issueIdOrKey Issue ID or issue key
+   * @param content Comment content
+   */
+  async addComment(issueIdOrKey: string, content: string): Promise<BacklogComment> {
+    return this.postFormData<BacklogComment>(`/issues/${issueIdOrKey}/comments`, {
+      content
+    });
+  }
+
+  /**
+   * Get the count of comments in an issue
+   * @param issueIdOrKey Issue ID or issue key
+   */
+  async getCommentCount(issueIdOrKey: string): Promise<BacklogCommentCount> {
+    return this.request<BacklogCommentCount>(`/issues/${issueIdOrKey}/comments/count`);
+  }
+
+  /**
+   * Get detailed information about a specific comment
+   * @param issueIdOrKey Issue ID or issue key
+   * @param commentId Comment ID
+   */
+  async getComment(issueIdOrKey: string, commentId: number): Promise<BacklogCommentDetail> {
+    return this.request<BacklogCommentDetail>(`/issues/${issueIdOrKey}/comments/${commentId}`);
   }
 }

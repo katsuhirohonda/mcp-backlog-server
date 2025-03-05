@@ -136,20 +136,44 @@ export interface BacklogIssue {
   stars: any[];
 }
 
+// Backlog comment information
+export interface BacklogComment {
+  id: number;
+  projectId: number;
+  issueId: number;
+  content: string;
+  changeLog: any[] | null;
+  createdUser: {
+    id: number;
+    userId: string;
+    name: string;
+    roleType: number;
+    lang: string;
+    nulabAccount?: {
+      nulabId: string;
+      name: string;
+      uniqueId: string;
+    };
+    mailAddress?: string;
+    lastLoginTime?: string;
+  };
+  created: string;
+  updated: string;
+  stars: any[];
+  notifications: any[];
+}
+
+// Backlog comment detail information
+export interface BacklogCommentDetail extends BacklogComment {
+  // 追加のフィールドがある場合はここに定義
+}
+
+// Backlog comment count response
+export interface BacklogCommentCount {
+  count: number;
+}
+
 // Backlog issue detail with comments
 export interface BacklogIssueDetail extends BacklogIssue {
-  comments: {
-    id: number;
-    content: string;
-    changeLog: any[];
-    createdUser: {
-      id: number;
-      userId: string;
-      name: string;
-    };
-    created: string;
-    updated: string;
-    stars: any[];
-    notifications: any[];
-  }[];
+  comments: BacklogComment[];
 }
